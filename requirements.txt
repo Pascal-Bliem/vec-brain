@@ -1,10 +1,11 @@
 streamlit
 langchain
-langchain - openai
-langchain - pinecone
-langchain - community
+langchain-openai
+langchain-community
 langchainhub
-pinecone - notebooks
+langchain-pinecone
+pinecone
+pinecone-notebooks
 beautifulsoup4
 docarray
 pillow

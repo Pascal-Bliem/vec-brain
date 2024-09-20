@@ -2,7 +2,13 @@ import re
 from typing import Dict, List
 
 import prompts
-from config import AssistantConfig, config
+from config import AssistantConfig, VectorStoreType
+from config import assistant_config as config
+
+if config.vector_store_type == VectorStoreType.PINECONE:
+    from langchain_pinecone import PineconeVectorStore
+    from db import vector_index
+
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_community.document_loaders import WebBaseLoader
@@ -51,10 +57,15 @@ class Assistant:
             model=config.embedding_model,
         )
 
-        self.vectorstore = DocArrayInMemorySearch.from_documents(
-            documents=[],
-            embedding=self.embeddings,
-        )
+        if config.vector_store_type == VectorStoreType.PINECONE:
+            self.vectorstore = PineconeVectorStore(
+                index=vector_index, embedding=self.embeddings
+            )
+        elif config.vector_store_type == VectorStoreType.DOCARRAY:
+            self.vectorstore = DocArrayInMemorySearch.from_documents(
+                documents=[],
+                embedding=self.embeddings,
+            )
 
         self.retriever = self.vectorstore.as_retriever(
             k=config.n_retrieval_results,
@@ -72,6 +83,9 @@ class Assistant:
         retrieval_chain = RunnablePassthrough.assign(
             context=self._parse_retriever_input | self.retriever,
         ).assign(answer=document_chain)
+
+        # TODO check if we can add RunnableBranch here to use different prompt
+        # when no documents are found
 
         self.chain = retrieval_chain
 

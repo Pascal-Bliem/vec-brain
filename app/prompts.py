@@ -10,13 +10,14 @@ answers to questions. If a context is provided (it should usually contain the ke
 Source, Title, and Content), do use the context to answer in your response. \
 Remember, that if context is provided, you must return both an answer and citations. \
 A citation consists of a VERBATIM quote that justifies the answer and the source of the \
-quoted document. If the quote is longer than one sentence you should shorten it and end it with "[...]" \
+quoted document. If the quote is longer than one sentence you should shorten it to one \
+sentence and end it with "[...]". \
 Return a citation for every quote across all documents that justify the answer.
 If you found Sources in the context, use the following format for your final output with citations:
 
 <answer>
     Source: <source>
-    > "<quote>"
+    > "<quote> [...]"
 
 else, just return the answer.
 
