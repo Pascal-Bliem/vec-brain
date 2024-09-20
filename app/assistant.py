@@ -1,3 +1,4 @@
+import re
 from typing import Dict, List
 
 import prompts
@@ -8,9 +9,9 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores.docarray.in_memory import \
     DocArrayInMemorySearch
 from langchain_core.documents.base import Document
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnableBranch, RunnablePassthrough
+from langchain_core.prompts import (ChatPromptTemplate, MessagesPlaceholder,
+                                    PromptTemplate)
+from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -21,6 +22,7 @@ class Assistant:
             openai_api_key=config.openai_api_key,
             model=config.model,
             temperature=config.temperature,
+            verbose=True,
         )
 
         self.prompt_template = ChatPromptTemplate.from_messages(
@@ -33,10 +35,7 @@ class Assistant:
         query_transform_prompt = ChatPromptTemplate.from_messages(
             [
                 MessagesPlaceholder(variable_name="messages"),
-                (
-                    "user",
-                    prompts.query_transform_prompt
-                ),
+                ("user", prompts.query_transform_prompt),
             ]
         )
 
@@ -62,24 +61,17 @@ class Assistant:
             score_threshold=config.retrieval_score_threshold,
         )
 
-        document_chain = create_stuff_documents_chain(self.chat, self.prompt_template)
-
-        retrieval_chain = (
-            RunnablePassthrough.assign(
-                context=self._parse_retriever_input | self.retriever,
-            )
-            | document_chain
+        document_prompt = PromptTemplate(
+            input_variables=["page_content", "source", "title"],
+            template=prompts.document_prompt,
+        )
+        document_chain = create_stuff_documents_chain(
+            self.chat, self.prompt_template, document_prompt=document_prompt
         )
 
-        # query_transforming_retrieval_chain = RunnableBranch(
-        #     (
-        #         lambda x: len(x.get("messages", [])) == 1,
-        #         # If only one message, then we just pass that message's content to retriever
-        #         (lambda x: x["messages"][-1].content) | retrieval_chain,
-        #     ),
-        #     # If messages, then we pass inputs to LLM chain to transform the query, then pass to retriever
-        #     query_transform_prompt | self.chat | retrieval_chain,
-        # ).with_config(run_name="chat_retriever_chain")
+        retrieval_chain = RunnablePassthrough.assign(
+            context=self._parse_retriever_input | self.retriever,
+        ).assign(answer=document_chain)
 
         self.chain = retrieval_chain
 
@@ -88,7 +80,20 @@ class Assistant:
             return ""
         return params["messages"][-1].content
 
-    def load_from_url(self, url: str) -> List[Document]:
+    def add_user_message_with_documents(self, message: str):
+        self.chat_history.add_user_message(message)
+        self._add_documents_from_user_message_to_store(message)
+
+    def _add_documents_from_user_message_to_store(self, message: str):
+        documents = []
+
+        # load docs from URL
+        if "http" in message:
+            for url in re.findall(r"(https?://\S+)", message):
+                documents += self._load_from_url(url)
+            self.vectorstore.add_documents(documents)
+
+    def _load_from_url(self, url: str) -> List[Document]:
         loader = WebBaseLoader(url)
         data = loader.load()
 

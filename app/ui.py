@@ -1,12 +1,12 @@
 import os
-import re
 
 import streamlit as st
 from assistant import Assistant
 
 st.title("Vec Brain")
 
-style_path = os.path.join(os.path.dirname(__file__), "style.css")
+cwd = os.path.dirname(__file__)
+style_path = os.path.join(cwd, "style.css")
 with open(style_path, "r") as f:
     style = f.read()
 
@@ -19,6 +19,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+asset_path = os.path.join(cwd, "assets/")
+user_icon = os.path.join(asset_path, "user_icon.jpg")
+ai_icon = os.path.join(asset_path, "ai_icon.jpg")
 
 # Initialize assistant (including chat history)
 if "assistant" not in st.session_state:
@@ -33,21 +36,14 @@ for message in st.session_state.assistant.chat_history.messages:
 # Accept user input
 if prompt := st.chat_input("What do you want to learn about today?"):
 
-    st.session_state.assistant.chat_history.add_user_message(prompt)
+    st.session_state.assistant.add_user_message_with_documents(prompt)
 
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=user_icon):
         st.markdown(prompt)
 
-    # load docs from URL
-    if "http" in prompt:
-        documents = []
-        for url in re.findall(r"(https?://\S+)", prompt):
-            documents += st.session_state.assistant.load_from_url(url)
-        st.session_state.assistant.vectorstore.add_documents(documents)
-
     # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        stream = st.session_state.assistant.chain.stream(
+    with st.chat_message("assistant", avatar=ai_icon):
+        stream = st.session_state.assistant.chain.pick("answer").stream(
             {
                 "messages": st.session_state.assistant.chat_history.messages,
             }
