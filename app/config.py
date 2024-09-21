@@ -13,6 +13,21 @@ class VectorStoreType(Enum):
 
 @dataclass
 class AssistantConfig:
+    """Configuration for the Assistant.
+
+    Attributes:
+        openai_api_key (str): API key for OpenAI.
+        model (str): Model name to be used.
+        temperature (float): Sampling temperature for the model.
+        doc_splitter_chunk_size (int): Size of chunks for document splitting.
+        doc_splitter_chunk_overlap (int): Overlap size for document splitting.
+        embedding_model (str): Model name for embeddings.
+        embedding_dimensions (int): Dimensions of the embedding vectors.
+        vector_store_type (VectorStoreType): Type of vector store to use.
+        n_retrieval_results (int): Number of retrieval results to return.
+        retrieval_score_threshold (float): Score threshold for retrieval results.
+    """
+
     openai_api_key: str = os.environ.get("OPENAI_API_KEY")
     model: str = "gpt-3.5-turbo-1106"
     temperature: float = 0.2
@@ -22,11 +37,21 @@ class AssistantConfig:
     embedding_dimensions: int = 1536  # default for text-embedding-ada-002
     vector_store_type: VectorStoreType = VectorStoreType.PINECONE
     n_retrieval_results: int = 5
-    retrieval_score_threshold: float = 0.8
+    retrieval_score_threshold: float = 0.87
 
 
 @dataclass
 class DBConfig:
+    """Configuration for the Database.
+
+    Attributes:
+        pinecone_api_key (str): API key for Pinecone.
+        vector_index_name (str): Name of the vector index.
+        vector_similarity_metric (str): Metric for vector similarity.
+        cloud_provider (str): Cloud provider name.
+        cloud_region (str): Cloud region name.
+    """
+
     pinecone_api_key: str = os.environ.get("PINECONE_API_KEY")
     vector_index_name: str = "vec-brain-index"
     vector_similarity_metric: str = "cosine"
