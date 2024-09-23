@@ -2,7 +2,7 @@ import re
 from typing import Dict, List
 
 import prompts
-from config import AssistantConfig, VectorStoreType
+from config import AssistantConfig, ChatModelProvider, VectorStoreType
 from config import assistant_config as config
 
 if config.vector_store_type == VectorStoreType.PINECONE:
@@ -19,6 +19,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import (ChatPromptTemplate, MessagesPlaceholder,
                                     PromptTemplate)
 from langchain_core.runnables import RunnableBranch, RunnablePassthrough
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -33,12 +34,23 @@ class Assistant:
         Args:
             config (AssistantConfig): Configuration for the Assistant.
         """
-        self.chat = ChatOpenAI(
-            openai_api_key=config.openai_api_key,
-            model=config.model,
-            temperature=config.temperature,
-            verbose=True,
-        )
+
+        if config.chat_model_provider == ChatModelProvider.OPENAI:
+            self.chat = ChatOpenAI(
+                openai_api_key=config.openai_api_key,
+                model=config.model,
+                temperature=config.temperature,
+                verbose=True,
+            )
+        elif config.chat_model_provider == ChatModelProvider.OLLAMA:
+            self.chat = ChatOllama(
+                model=config.model,
+                temperature=config.temperature,
+            )
+        else:
+            raise NotImplementedError(
+                f"Chat model provider {config.chat_model_provider} not implemented"
+            )
 
         self.prompt_template_rag = ChatPromptTemplate.from_messages(
             [

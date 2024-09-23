@@ -1,6 +1,7 @@
 # Vec Brain LLM
 A personal knowledge base app with LLM + RAG with a simple [streamlit](https://streamlit.io/) GUI.
 Users can add information from different sources. The assistant will answer based on the information added. If it can't retrieve information that is similar enough to the query, it will give a general answer based on its own knowledge.
+The chat model can be provided either through [OpenAI's API](https://platform.openai.com/) or by running [Ollama](https://github.com/ollama/ollama) locally.
 The information can be kept either persistently in [Pinecone](https://www.pinecone.io/) or ephemerally in memory.
 
 <div align="center">
@@ -15,13 +16,19 @@ When the user has a question, embeddings are created for that question as well a
 ![Application flow](./flowchart.png)
 
 ## Install & Run
-You'll need an OpenAI api key as well as a Pinecone api key (if you want to use Pinecone as vector store).
-Export these keys as environment variables, set up a Python virtual environment, and run the app like this:
-
+You'll need an OpenAI api key as well as a Pinecone api key if you want to use OpenAI as a model provider and Pinecone as vector store.
+If you use their APIs for the chat model or vector storage, set up the API keys as env variables:
 ```
 export OPENAI_API_KEY=<your_openai_api_key>
 export PINECONE_API_KEY=<your_pinecone_api_key>
-
+```
+If you want to run Ollama locally for the chat model instead, you need to [download and install](https://github.com/ollama/ollama) it and pull the model you want to use first:
+```
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull <model-name>
+```
+Then set up a Python virtual environment, and run the app like this:
+```
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -29,6 +36,6 @@ pip install -r requirements.txt
 streamlit run app/ui.py
 ```
 
-In case you want to change any configuration values, you can find them in `app/config.py`.
+In case you want to change any configuration values (e.g. model provider and model name), you can find them in `app/config.py`.
 
 The UI in `app/ui.py` is separated from the agents logic in `app/assistant.py`, so if you don't like streamlit, you can easily plug in another UI and just import `assistant.Assistant`.

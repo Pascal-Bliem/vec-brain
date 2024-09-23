@@ -6,6 +6,11 @@ if os.environ.get("USER_AGENT") is None:
     os.environ["USER_AGENT"] = "CustomAgent/1.0"
 
 
+class ChatModelProvider(Enum):
+    OPENAI = "openai"
+    OLLAMA = "ollama"
+
+
 class VectorStoreType(Enum):
     PINECONE = "pinecone"
     DOCARRAY = "docarray"
@@ -16,6 +21,7 @@ class AssistantConfig:
     """Configuration for the Assistant.
 
     Attributes:
+        chat_model_provider (ChatModelProvider): The provider of the chat model.
         openai_api_key (str): API key for OpenAI.
         model (str): Model name to be used.
         temperature (float): Sampling temperature for the model.
@@ -28,8 +34,13 @@ class AssistantConfig:
         retrieval_score_threshold (float): Score threshold for retrieval results.
     """
 
+    chat_model_provider: ChatModelProvider = ChatModelProvider.OPENAI
     openai_api_key: str = os.environ.get("OPENAI_API_KEY")
-    model: str = "gpt-3.5-turbo-1106"
+    model: str = (
+        "gpt-3.5-turbo-1106"
+        if chat_model_provider == ChatModelProvider.OPENAI
+        else "llama3"
+    )
     temperature: float = 0.2
     doc_splitter_chunk_size: int = 1000
     doc_splitter_chunk_overlap: int = 20
